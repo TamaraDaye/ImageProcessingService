@@ -1,12 +1,11 @@
+from typing import Annotated
 from app.models import Base
 from app.config import settings
-from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from fastapi import Depends
 
 try:
     engine = create_async_engine(settings.database_url, echo=True)
-    if not database_exists(engine.url):
-        create_database(engine.url)
 except Exception as e:
     print(e)
     raise e
@@ -23,3 +22,6 @@ async def init_db():
 async def get_session():
     async with AsyncSession(engine) as session:
         yield session
+
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
