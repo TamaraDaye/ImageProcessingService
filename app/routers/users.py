@@ -4,15 +4,16 @@ from ..database.database import SessionDep
 from .. import schemas
 from .. import utils
 from ..models import models
+from . import authorization
 
 router = APIRouter(tags=["users"])  # pyright: ignore[]
 
 
-
-
 @router.get("/user", response_model=schemas.UserResponse)
-async def get_current_user()
-
+async def get_current_user(
+    current_user: Annotated[models.User, Depends(authorization.get_current_user)],
+):
+    return current_user
 
 
 @router.post("/signup/", response_model=schemas.UserResponse)

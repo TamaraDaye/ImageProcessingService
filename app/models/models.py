@@ -7,7 +7,6 @@ from sqlalchemy.orm import (
     mapped_column,
     Mapped,
     relationship,
-    selectin_polymorphic,
 )
 
 

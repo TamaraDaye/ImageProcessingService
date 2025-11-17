@@ -1,4 +1,24 @@
 from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
+
+
+class ResizeArg(BaseModel):
+    width: int | None
+    height: int | None
+
+
+class CropArg(ResizeArg):
+    x: int | None
+    y: int | None
+
+
+@dataclass
+class Transform:
+    resize: ResizeArg
+    crop: CropArg
+    rotate: int | None
+    format: str | None
+    filters: dict[str, bool]
 
 
 class Token(BaseModel):
@@ -22,5 +42,4 @@ class UserResponse(BaseModel):
 
 
 class FormData(BaseModel):
-    image: bytes
-    image_url: str
+    pass
