@@ -2,6 +2,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from .database.database import init_db
+from .models import models
 
 
 @asynccontextmanager

@@ -1,9 +1,8 @@
 from __future__ import annotations
 import datetime
-import asyncio
 from . import Base
 from typing import List
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import (
     mapped_column,
     Mapped,
