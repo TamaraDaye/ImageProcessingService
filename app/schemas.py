@@ -19,3 +19,8 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     username: str
+
+
+class FormData(BaseModel):
+    image: bytes
+    image_url: str

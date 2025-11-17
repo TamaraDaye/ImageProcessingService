@@ -7,6 +7,7 @@ from sqlalchemy.orm import (
     mapped_column,
     Mapped,
     relationship,
+    selectin_polymorphic,
 )
 
 
@@ -15,9 +16,9 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    hashed_password: Mapped[str]
-    image: Mapped[List["Image"]] = relationship(
-        back_populates="users", cascade="all, delete-orphan"
+    password: Mapped[str]
+    images: Mapped[List[Image]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
 
 
@@ -30,4 +31,4 @@ class Image(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    user: Mapped["User"] = relationship(back_populates="images")
+    user: Mapped[User] = relationship(back_populates="images", lazy="selectin")
