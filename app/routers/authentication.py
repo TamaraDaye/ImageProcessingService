@@ -24,7 +24,7 @@ async def login(
             detail="Invalid User creditentials",
         )
 
-    if not utils.verify_password(user.password, user_data.password):
+    if not utils.verify_password(user_data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user creditentials",

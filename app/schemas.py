@@ -46,15 +46,15 @@ class S3ImageData(BaseModel):
     url: str
     name: str
     size: float | int = Field(alias="ContentLength")
-    type: str = Field(alias="ContentType")
+    image_type: str = Field(alias="ContentType")
     uploaded_at: datetime = Field(alias="LastModified")
 
 
 class ImageCreate(BaseModel):
     url: str
     name: str
+    image_type: str
     size: float | int
-    type: str
     uploaded_at: datetime
 
 

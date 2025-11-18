@@ -1,15 +1,15 @@
 from pwdlib import PasswordHash
 import aioboto3
-
-from app import schemas
+from . import schemas
 from .config import settings
+from pwdlib.hashers.argon2 import Argon2Hasher
+from pwdlib.hashers.bcrypt import BcryptHasher
+
+password_hash = PasswordHash([Argon2Hasher(), BcryptHasher()])
 
 
-password_hash = PasswordHash.recommended()
-
-
-async def verify_password(hashed_password: str, password: str):
-    return password_hash.verify(hashed_password, password)
+async def verify_password(password: str, hashed_password: str):
+    return password_hash.verify(password, hashed_password)
 
 
 def hash_password(password: str):
@@ -30,6 +30,7 @@ async def upload_image(username: str, image):
 
         data = schemas.S3ImageData(
             name=image.filename,
+            ContentType=image.filename.split(".")[-1],
             url=f"https://{bucket}.s3.amazonaws.com/{key}",
             **s3metadata,
         )

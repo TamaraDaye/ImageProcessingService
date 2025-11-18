@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter
-from fastapi import Depends, status, HTTPException, Query, Form, File, UploadFile
+from fastapi import Depends, status, HTTPException, Query, Form, File, UploadFile, Path
 from .. import schemas
 from . import authorization
 from ..models import models
@@ -17,6 +17,8 @@ async def upload_image(
     current_user: Annotated[models.User, Depends(authorization.get_current_user)],
     session: SessionDep,
 ):
+    print(file.filename)
+
     await file.seek(0)
 
     image = await utils.upload_image(current_user.username, file)
@@ -32,3 +34,8 @@ async def upload_image(
     await session.refresh(db_image)
 
     return db_image
+
+
+@router.get("/images/{id}")
+async def get_image(id: Annotated[int, Path()]):
+    pass

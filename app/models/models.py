@@ -4,6 +4,7 @@ from . import Base
 from typing import List
 from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import (
+    MapperEvents,
     mapped_column,
     Mapped,
     relationship,
@@ -15,7 +16,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, index=True)
     email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    password: Mapped[str]
+    password: Mapped[str] = mapped_column(String(255))
     images: Mapped[List[Image]] = relationship(
         back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
@@ -27,7 +28,7 @@ class Image(Base):
     url: Mapped[str] = mapped_column(String(200), nullable=True)
     name: Mapped[str] = mapped_column(String(200))
     size: Mapped[float]
-    type: Mapped[str]
+    image_type: Mapped[str]
     uploaded_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
