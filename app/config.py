@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     redis_url: str
     secret_key: str
     algorithm: str
+    s3_bucket: str
 
 
 settings = Settings()  # type: ignore
