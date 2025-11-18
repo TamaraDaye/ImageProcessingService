@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 
@@ -41,5 +42,21 @@ class UserResponse(BaseModel):
     username: str
 
 
-class FormData(BaseModel):
+class S3ImageData(BaseModel):
+    url: str
+    name: str
+    size: float | int = Field(alias="ContentLength")
+    type: str = Field(alias="ContentType")
+    uploaded_at: datetime = Field(alias="LastModified")
+
+
+class ImageCreate(BaseModel):
+    url: str
+    name: str
+    size: float | int
+    type: str
+    uploaded_at: datetime
+
+
+class ImageResponse(ImageCreate):
     pass

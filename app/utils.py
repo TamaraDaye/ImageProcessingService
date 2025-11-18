@@ -1,7 +1,9 @@
 from pwdlib import PasswordHash
 import aioboto3
+
+from app import schemas
 from .config import settings
-import aiofiles
+
 
 password_hash = PasswordHash.recommended()
 
@@ -24,4 +26,14 @@ async def upload_image(username: str, image):
         key = f"{prefix}{image.filename}"
         await s3.upload_fileobj(image.file, bucket, key)
 
-    return True
+        s3metadata = await s3.head_object(Bucket=bucket, Key=key)
+
+        data = schemas.S3ImageData(
+            name=image.filename,
+            url=f"https://{bucket}.s3.amazonaws.com/{key}",
+            **s3metadata,
+        )
+
+        data = schemas.ImageCreate(**data.model_dump())
+
+    return data
