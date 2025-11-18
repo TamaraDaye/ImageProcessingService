@@ -24,8 +24,10 @@ class User(Base):
 class Image(Base):
     __tablename__ = "images"
     id: Mapped[int] = mapped_column(primary_key=True)
-    image_url: Mapped[str] = mapped_column(String(200), nullable=True)
-    image_name: Mapped[str] = mapped_column(String(200))
+    url: Mapped[str] = mapped_column(String(200), nullable=True)
+    name: Mapped[str] = mapped_column(String(200))
+    size: Mapped[float]
+    type: Mapped[str]
     uploaded_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
