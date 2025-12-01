@@ -1,3 +1,4 @@
+from botocore.exceptions import ClientError
 from fastapi.responses import StreamingResponse
 from typing import Annotated
 from fastapi import APIRouter
@@ -36,5 +37,20 @@ async def upload_image(
 
 
 @router.get("/images/{id}", response_class=StreamingResponse)
-async def get_image(id: Annotated[int, Path()]):
-    pass
+async def get_image(
+    id: Annotated[int, Path()],
+    current_user: Annotated[models.User, Depends(authorization.get_current_user)],
+    session: SessionDep,
+):
+    db_image = await session.get(models.Image, id)
+
+    if not db_image:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    try:
+        image_iterator = utils.retrieve_image(current_user.username, db_image.name)  # pyright: ignore[]
+
+        return StreamingResponse(image_iterator, media_type=db_image.image_type)
+
+    except ClientError as _:
+        raise HTTPException(status_code=404, detail="Image not found")

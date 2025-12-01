@@ -60,5 +60,14 @@ async def upload_image(username: str, image):
     )
 
 
-async def retrieve_image(username: str, id: int):
-    pass
+async def retrieve_image(username: str, image_name: str):
+    bucket = settings.s3_bucket
+    key = f"{username}/{image_name}"
+
+    session = aioboto3.Session()
+
+    async with session.client("s3") as s3:  # pyright: ignore[]
+        response = await s3.get_object(Bucket=bucket, Key=key)
+
+        async for chunk in response["Body"]:
+            yield chunk
