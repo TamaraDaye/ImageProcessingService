@@ -8,6 +8,7 @@ dependencies = [
     "aioboto3>=15.5.0", #communicates with aws s3
     "aiofiles>=25.1.0", #async file handling library
     "aiohttp>=3.13.2", #async requests library
+    "alembic>=1.17.2",
     "argon2-cffi>=25.1.0",
     "asyncpg>=0.30.0", #async library for managine postgres conns
     "boto>=2.49.0",

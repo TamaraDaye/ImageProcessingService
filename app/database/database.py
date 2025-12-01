@@ -1,3 +1,5 @@
+"""Database connectivity Module"""
+
 from typing import Annotated
 from app.models import Base
 from app.config import settings

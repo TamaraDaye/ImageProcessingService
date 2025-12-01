@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pwdlib import PasswordHash
 import aioboto3
 from . import schemas
@@ -6,6 +7,20 @@ from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
 
 password_hash = PasswordHash([Argon2Hasher(), BcryptHasher()])
+
+
+def format_size(size_bytes, decimals=2):
+    if size_bytes == 0:
+        return "O bytes"
+    power = 1024
+
+    units = ["Bytes", "KB", "MB", "GB", "TB", "PB"]
+
+    import math
+
+    i = int(math.floor(math.log(size_bytes, power)))
+
+    return f"{size_bytes / (power**i):.{decimals}f} {units[i]}"
 
 
 async def verify_password(password: str, hashed_password: str):
@@ -22,19 +37,28 @@ async def upload_image(username: str, image):
 
     session = aioboto3.Session()
 
+    image.file.seek(0, 2)
+
+    file_size_bytes = image.file.tell()
+
+    image.file.seek(0)
+
+    size_mb = format_size(file_size_bytes)
+
     async with session.client("s3") as s3:  # pyright: ignore[]
         key = f"{prefix}{image.filename}"
-        await s3.upload_fileobj(image.file, bucket, key)
-
-        s3metadata = await s3.head_object(Bucket=bucket, Key=key)
-
-        data = schemas.S3ImageData(
-            name=image.filename,
-            ContentType=image.filename.split(".")[-1],
-            url=f"https://{bucket}.s3.amazonaws.com/{key}",
-            **s3metadata,
+        await s3.upload_fileobj(
+            image.file, bucket, key, ExtraArgs={"ContentType": image.content_type}
         )
 
-        data = schemas.ImageCreate(**data.model_dump())
+    return schemas.ImageCreate(
+        name=image.filename,
+        image_type=image.content_type,
+        url=f"https://{bucket}.s3.amazonaws.com/{key}",
+        size=size_mb,
+        uploaded_at=datetime.now(timezone.utc),
+    )
 
-    return data
+
+async def retrieve_image(username: str, id: int):
+    pass

@@ -4,19 +4,19 @@ from pydantic.dataclasses import dataclass
 
 
 class ResizeArg(BaseModel):
-    width: int | None
-    height: int | None
+    width: int
+    height: int
 
 
 class CropArg(ResizeArg):
-    x: int | None
-    y: int | None
+    x: int
+    y: int
 
 
 @dataclass
 class Transform:
-    resize: ResizeArg
-    crop: CropArg
+    resize: ResizeArg | None
+    crop: CropArg | None
     rotate: int | None
     format: str | None
     filters: dict[str, bool]
@@ -42,19 +42,11 @@ class UserResponse(BaseModel):
     username: str
 
 
-class S3ImageData(BaseModel):
-    url: str
-    name: str
-    size: float | int = Field(alias="ContentLength")
-    image_type: str = Field(alias="ContentType")
-    uploaded_at: datetime = Field(alias="LastModified")
-
-
 class ImageCreate(BaseModel):
     url: str
     name: str
     image_type: str
-    size: float | int
+    size: str
     uploaded_at: datetime
 
 
