@@ -39,11 +39,11 @@ async def upload_image(username: str, image_data, image_name, image_type):
 
     session = aioboto3.Session()
 
-    image_data.file.seek(0, 2)
+    image_data.seek(0, 2)
 
-    file_size_bytes = image_data.file.tell()
+    file_size_bytes = image_data.tell()
 
-    image_data.file.seek(0)
+    image_data.seek(0)
 
     size_mb = format_size(file_size_bytes)
 

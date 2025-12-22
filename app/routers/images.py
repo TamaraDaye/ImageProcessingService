@@ -94,3 +94,15 @@ async def transform_image(
         transformed["name"],
         transformed["type"],
     )
+
+    db_transformed_image = models.Image(
+        user_id=current_user.id, **db_transformed_image.model_dump()
+    )
+
+    session.add(db_transformed_image)
+
+    await session.commit()
+
+    await session.refresh(db_transformed_image)
+
+    return db_transformed_image
