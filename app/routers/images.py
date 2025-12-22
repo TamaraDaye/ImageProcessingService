@@ -21,7 +21,9 @@ async def upload_image(
 ):
     await file.seek(0)
 
-    image = await utils.upload_image(current_user.username, file)
+    image = await utils.upload_image(
+        current_user.username, file, file.filename, file.content_type
+    )
 
     db_image = models.Image(user_id=current_user.id, **image.model_dump())
 

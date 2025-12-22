@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 from pwdlib import PasswordHash
 import aioboto3
-from sqlalchemy import tuple_
 from . import schemas
 from .config import settings
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
 from PIL import Image, ImageOps
+import io
 
 password_hash = PasswordHash([Argon2Hasher(), BcryptHasher()])
 
@@ -33,29 +33,29 @@ def hash_password(password: str):
     return password_hash.hash(password)
 
 
-async def upload_image(username: str, image):
+async def upload_image(username: str, image_data, image_name, image_type):
     bucket = settings.s3_bucket
     prefix = f"{username}/"
 
     session = aioboto3.Session()
 
-    image.file.seek(0, 2)
+    image_data.file.seek(0, 2)
 
-    file_size_bytes = image.file.tell()
+    file_size_bytes = image_data.file.tell()
 
-    image.file.seek(0)
+    image_data.file.seek(0)
 
     size_mb = format_size(file_size_bytes)
 
     async with session.client("s3") as s3:  # pyright: ignore[]
-        key = f"{prefix}{image.filename}"
+        key = f"{prefix}{image_name}"
         await s3.upload_fileobj(
-            image.file, bucket, key, ExtraArgs={"ContentType": image.content_type}
+            image_data, bucket, key, ExtraArgs={"ContentType": image_type}
         )
 
     return schemas.ImageCreate(
-        name=image.filename,
-        image_type=image.content_type,
+        name=image_name,
+        image_type=image_type,
         url=f"https://{bucket}.s3.amazonaws.com/{key}",
         size=size_mb,
         uploaded_at=datetime.now(timezone.utc),
@@ -75,10 +75,11 @@ async def retrieve_image(username: str, image_name: str):
             yield chunk
 
 
-async def image_transformer(img, transformations, image_name):
+async def image_transformer(username, img, transformations, image_name):
     with Image.open(img) as img:
         new_image = img
         new_image_name = image_name
+        new_image_type = transformations.get("format") or img.format
 
         if transformations["resize"] is not None:
             new_size = tuple(transformations["resize"].values())
@@ -106,8 +107,21 @@ async def image_transformer(img, transformations, image_name):
                 new_image = ImageOps.grayscale(new_image)
                 new_image_name = "grayscale_" + new_image_name
 
-        try:
+        if new_image_type.upper() in ["JPG", "JPEG"]:  # pyright: ignore[]
             if new_image.mode in ("RGBA", "P"):
                 new_image = new_image.convert("RGB")
-        except:
-            pass
+
+        img_byte_arr = io.BytesIO()
+
+        try:
+            new_image.save(img_byte_arr, format=new_image_type)
+            img_byte_arr.seek(0)
+            return {
+                "name": new_image_name,
+                "type": new_image_type,
+                "data": img_byte_arr,
+            }
+
+        except Exception as e:
+            print(f"Transformation failed: {e}")
+            return None
