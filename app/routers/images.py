@@ -2,7 +2,7 @@ from botocore.exceptions import ClientError
 from fastapi.responses import StreamingResponse
 from typing import Annotated
 from fastapi import APIRouter
-from fastapi import Depends, status, HTTPException, Query, Form, File, UploadFile, Path
+from fastapi import Depends, status, HTTPException, Query, File, UploadFile, Path
 from .. import schemas
 from . import authorization
 from ..models import models
@@ -54,3 +54,12 @@ async def get_image(
 
     except ClientError as _:
         raise HTTPException(status_code=404, detail="Image not found")
+
+
+@router.post("/images/{id}/transform", response_model=schemas.ImageResponse)
+async def transform_image(
+    id: Annotated[int, Path()],
+    current_user: Annotated[models.User, Depends(authorization.get_current_user)],
+    transformations: Annotated[schemas.Transform, Query()],
+):
+    pass

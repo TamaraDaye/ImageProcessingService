@@ -1,23 +1,23 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
 
 
 class ResizeArg(BaseModel):
-    width: int
-    height: int
+    width: float
+    height: float
 
 
 class CropArg(ResizeArg):
-    x: int
-    y: int
+    x: float
+    y: float
 
 
 @dataclass
 class Transform:
     resize: ResizeArg | None
     crop: CropArg | None
-    rotate: int | None
+    rotate: float | None
     format: str | None
     filters: dict[str, bool]
 

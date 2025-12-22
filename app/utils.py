@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 from pwdlib import PasswordHash
 import aioboto3
+from sqlalchemy import tuple_
 from . import schemas
 from .config import settings
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
+from PIL import Image, ImageOps
 
 password_hash = PasswordHash([Argon2Hasher(), BcryptHasher()])
 
@@ -71,3 +73,41 @@ async def retrieve_image(username: str, image_name: str):
 
         async for chunk in response["Body"]:
             yield chunk
+
+
+async def image_transformer(img, transformations, image_name):
+    with Image.open(img) as img:
+        new_image = img
+        new_image_name = image_name
+
+        if transformations["resize"] is not None:
+            new_size = tuple(transformations["resize"].values())
+
+            new_image = new_image.resize(new_size)
+
+            new_image_name = "resized_" + new_image_name
+
+        if transformations["crop"] is not None:
+            box = tuple(transformations["crop"].values())
+
+            new_image = new_image.crop(box)
+
+            new_image_name = "cropped_" + new_image_name
+
+        if transformations["rotate"] is not None:
+            angle = transformations["rotate"]
+
+            new_image = new_image.rotate(angle)
+
+            new_image_name = "rotated_" + new_image_name
+
+        if transformations["filters"] is not None:
+            if transformations["filters"]["grayscale"]:
+                new_image = ImageOps.grayscale(new_image)
+                new_image_name = "grayscale_" + new_image_name
+
+        try:
+            if new_image.mode in ("RGBA", "P"):
+                new_image = new_image.convert("RGB")
+        except:
+            pass
