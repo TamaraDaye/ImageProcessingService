@@ -62,7 +62,7 @@ async def upload_image(username: str, image_data, image_name, image_type):
     )
 
 
-async def retrieve_image(username: str, image_name: str):
+async def retrieve_image(username: str, image_name: str, stream=False):
     bucket = settings.s3_bucket
     key = f"{username}/{image_name}"
 
@@ -71,11 +71,16 @@ async def retrieve_image(username: str, image_name: str):
     async with session.client("s3") as s3:  # pyright: ignore[]
         response = await s3.get_object(Bucket=bucket, Key=key)
 
-        async for chunk in response["Body"]:
-            yield chunk
+        async with response["Body"] as body:
+            if stream:
+                async for chunk in body.iter_chunks():
+                    yield chunk
+
+            else:
+                yield await body.read()
 
 
-async def image_transformer(username, img, transformations, image_name):
+async def image_transformer(img, transformations, image_name):
     with Image.open(img) as img:
         new_image = img
         new_image_name = image_name
@@ -112,16 +117,20 @@ async def image_transformer(username, img, transformations, image_name):
                 new_image = new_image.convert("RGB")
 
         img_byte_arr = io.BytesIO()
+        success = False
 
         try:
             new_image.save(img_byte_arr, format=new_image_type)
             img_byte_arr.seek(0)
-            return {
-                "name": new_image_name,
-                "type": new_image_type,
-                "data": img_byte_arr,
-            }
+            success = True
 
         except Exception as e:
             print(f"Transformation failed: {e}")
             return None
+
+        if success:
+            return {
+                "name": new_image_name,
+                "type": f"image/{new_image_type.lower()}",
+                "data": img_byte_arr,
+            }

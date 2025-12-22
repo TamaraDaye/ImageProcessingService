@@ -8,6 +8,7 @@ from . import authorization
 from ..models import models
 from .. import utils
 from ..database.database import SessionDep
+import io
 
 
 router = APIRouter(tags=["images"])
@@ -28,8 +29,6 @@ async def upload_image(
     db_image = models.Image(user_id=current_user.id, **image.model_dump())
 
     session.add(db_image)
-
-    await session.flush()
 
     await session.commit()
 
@@ -63,5 +62,35 @@ async def transform_image(
     id: Annotated[int, Path()],
     current_user: Annotated[models.User, Depends(authorization.get_current_user)],
     transformations: Annotated[schemas.Transform, Query()],
+    session: SessionDep,
 ):
-    pass
+    img_data = io.BytesIO()
+
+    db_image = await session.get(models.Image, id)
+
+    if not db_image:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    try:
+        async for chunk in utils.retrieve_image(current_user.username, db_image.name):
+            img_data.write(chunk)
+
+    except Exception as e:
+        print(f"Coudn't retrieve_image {e}")
+
+    transformed = await utils.image_transformer(
+        img_data, transformations.model_dump(), db_image.name
+    )
+
+    if not transformed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="image transformation failed",
+        )
+
+    db_transformed_image = await utils.upload_image(
+        current_user.username,
+        transformed["data"],
+        transformed["name"],
+        transformed["type"],
+    )

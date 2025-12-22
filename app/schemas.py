@@ -1,6 +1,5 @@
 from datetime import datetime
 from pydantic import BaseModel
-from pydantic.dataclasses import dataclass
 
 
 class ResizeArg(BaseModel):
@@ -13,13 +12,12 @@ class CropArg(ResizeArg):
     y: float
 
 
-@dataclass
-class Transform:
-    resize: ResizeArg | None
-    crop: CropArg | None
-    rotate: float | None
-    format: str | None
-    filters: dict[str, bool]
+class Transform(BaseModel):
+    resize: ResizeArg | None = None
+    crop: CropArg | None = None
+    rotate: float | None = None
+    format: str | None = None
+    filters: dict[str, bool] = {"grayscale": False}
 
 
 class Token(BaseModel):
