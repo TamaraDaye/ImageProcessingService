@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from numpy import resize
 from pwdlib import PasswordHash
 import aioboto3
 from . import schemas
@@ -81,15 +82,27 @@ async def retrieve_image(username: str, image_name: str, stream=False):
 
 
 async def image_transformer(img, transformations, image_name):
+    img.seek(0)
+
     with Image.open(img) as img:
-        new_image = img
+        img.load()
+        new_image = img.copy()
         new_image_name = image_name
         new_image_type = transformations.get("format") or img.format
 
-        if transformations["resize"] is not None:
-            new_size = tuple(transformations["resize"].values())
+        if new_image_type:
+            new_image_type = new_image_type.upper()
 
-            new_image = new_image.resize(new_size)
+        if transformations["resize"] is not None:
+            width = transformations["resize"]["width"]
+            height = transformations["resize"]["height"]
+
+            print("original:", new_image.size)
+            print("resize :", width, height)
+
+            resized = new_image.resize((width, height))
+
+            new_image = resized
 
             new_image_name = "resized_" + new_image_name
 

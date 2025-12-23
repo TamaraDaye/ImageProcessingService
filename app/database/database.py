@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from fastapi import Depends
 
 try:
-    engine = create_async_engine(settings.database_url, echo=True)
+    engine = create_async_engine(settings.database_url)
 except Exception as e:
     print(e)
     raise e

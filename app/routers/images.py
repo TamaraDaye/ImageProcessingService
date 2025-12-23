@@ -1,7 +1,7 @@
 from botocore.exceptions import ClientError
 from fastapi.responses import StreamingResponse
 from typing import Annotated
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 from fastapi import Depends, status, HTTPException, Query, File, UploadFile, Path
 from .. import schemas
 from . import authorization
@@ -61,7 +61,7 @@ async def get_image(
 async def transform_image(
     id: Annotated[int, Path()],
     current_user: Annotated[models.User, Depends(authorization.get_current_user)],
-    transformations: Annotated[schemas.Transform, Query()],
+    transformations: Annotated[schemas.Transform, Body()],
     session: SessionDep,
 ):
     img_data = io.BytesIO()
