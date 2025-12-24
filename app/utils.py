@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from numpy import resize
 from pwdlib import PasswordHash
 import aioboto3
 from . import schemas
@@ -88,17 +87,14 @@ async def image_transformer(img, transformations, image_name):
         img.load()
         new_image = img.copy()
         new_image_name = image_name
-        new_image_type = transformations.get("format") or img.format
+        new_image_type = transformations.format or img.format
 
         if new_image_type:
             new_image_type = new_image_type.upper()
 
-        if transformations["resize"] is not None:
-            width = transformations["resize"]["width"]
-            height = transformations["resize"]["height"]
-
-            print("original:", new_image.size)
-            print("resize :", width, height)
+        if transformations.resize:
+            width = transformations.resize.width
+            height = transformations.resize.height
 
             resized = new_image.resize((width, height))
 
@@ -106,22 +102,23 @@ async def image_transformer(img, transformations, image_name):
 
             new_image_name = "resized_" + new_image_name
 
-        if transformations["crop"] is not None:
-            box = tuple(transformations["crop"].values())
+        if transformations.crop:
+            box = tuple(transformations.crop.model_dump().values())
+            print(box)
 
             new_image = new_image.crop(box)
 
             new_image_name = "cropped_" + new_image_name
 
-        if transformations["rotate"] is not None:
-            angle = transformations["rotate"]
+        if transformations.rotate:
+            angle = transformations.rotate
 
             new_image = new_image.rotate(angle)
 
             new_image_name = "rotated_" + new_image_name
 
-        if transformations["filters"] is not None:
-            if transformations["filters"]["grayscale"]:
+        if transformations.filters:
+            if transformations.filters["grayscale"]:
                 new_image = ImageOps.grayscale(new_image)
                 new_image_name = "grayscale_" + new_image_name
 
@@ -144,6 +141,6 @@ async def image_transformer(img, transformations, image_name):
         if success:
             return {
                 "name": new_image_name,
-                "type": f"image/{new_image_type.lower()}",
+                "type": f"image/{new_image_type.lower()}",  # pyright: ignore[]
                 "data": img_byte_arr,
             }

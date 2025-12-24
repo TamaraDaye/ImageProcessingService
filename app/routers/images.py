@@ -61,7 +61,7 @@ async def get_image(
 async def transform_image(
     id: Annotated[int, Path()],
     current_user: Annotated[models.User, Depends(authorization.get_current_user)],
-    transformations: Annotated[schemas.Transform, Body()],
+    transformations: schemas.Transform,
     session: SessionDep,
 ):
     img_data = io.BytesIO()
@@ -79,7 +79,7 @@ async def transform_image(
         print(f"Coudn't retrieve_image {e}")
 
     transformed = await utils.image_transformer(
-        img_data, transformations.model_dump(), db_image.name
+        img_data, transformations, db_image.name
     )
 
     if not transformed:
