@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from pwdlib import PasswordHash
 import aioboto3
+from botocore.exceptions import ClientError
 from . import schemas
 from .config import settings
 from pwdlib.hashers.argon2 import Argon2Hasher
@@ -49,9 +50,12 @@ async def upload_image(username: str, image_data, image_name, image_type):
 
     async with session.client("s3") as s3:  # pyright: ignore[]
         key = f"{prefix}{image_name}"
-        await s3.upload_fileobj(
-            image_data, bucket, key, ExtraArgs={"ContentType": image_type}
-        )
+        try:
+            await s3.upload_fileobj(
+                image_data, bucket, key, ExtraArgs={"ContentType": image_type}
+            )
+        except ClientError as e:
+            raise
 
     return schemas.ImageCreate(
         name=image_name,
@@ -69,7 +73,10 @@ async def retrieve_image(username: str, image_name: str, stream=False):
     session = aioboto3.Session()
 
     async with session.client("s3") as s3:  # pyright: ignore[]
-        response = await s3.get_object(Bucket=bucket, Key=key)
+        try:
+            response = await s3.get_object(Bucket=bucket, Key=key)
+        except ClientError as e:
+            raise
 
         async with response["Body"] as body:
             if stream:
@@ -136,7 +143,7 @@ async def image_transformer(img, transformations, image_name):
 
         except Exception as e:
             print(f"Transformation failed: {e}")
-            return None
+            raise
 
         if success:
             return {

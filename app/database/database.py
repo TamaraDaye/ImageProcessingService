@@ -5,6 +5,7 @@ from app.models import Base
 from app.config import settings
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from fastapi import Depends
+from redis import asyncio as aioredis
 
 try:
     engine = create_async_engine(settings.database_url)
@@ -27,3 +28,5 @@ async def get_session():
 
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+redis = aioredis.from_url(settings.redis_url, decode_responses=False)

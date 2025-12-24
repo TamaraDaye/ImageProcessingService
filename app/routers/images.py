@@ -17,7 +17,7 @@ from .. import schemas
 from . import authorization
 from ..models import models
 from .. import utils
-from ..database.database import SessionDep
+from ..database.database import SessionDep, redis
 import io
 
 
@@ -58,12 +58,28 @@ async def get_image(
     if not db_image:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
+    cached_image = await redis.get(db_image.name)
+
+    if cached_image:
+        return StreamingResponse(
+            io.BytesIO(cached_image), media_type=db_image.image_type
+        )
+
     try:
-        image_iterator = utils.retrieve_image(current_user.username, db_image.name)  # pyright: ignore[]
+        img_data = io.BytesIO()
 
-        return StreamingResponse(image_iterator, media_type=db_image.image_type)
+        async for chunk in utils.retrieve_image(current_user.username, db_image.name):
+            img_data.write(chunk)
 
-    except ClientError as _:
+        image_bytes = img_data.getvalue()
+
+        await redis.set(db_image.name, image_bytes)
+
+        img_data.seek(0)
+
+        return StreamingResponse(img_data, media_type=db_image.image_type)
+
+    except Exception as e:
         raise HTTPException(status_code=404, detail="Image not found")
 
 
