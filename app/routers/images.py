@@ -100,6 +100,9 @@ async def get_images(
 
     images = await session.scalars(query)
 
+    if not images:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
     return images
 
 
@@ -115,24 +118,16 @@ async def transform_image(
     db_image = await session.get(models.Image, id)
 
     if not db_image:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+        )
 
-    try:
-        async for chunk in utils.retrieve_image(current_user.username, db_image.name):
-            img_data.write(chunk)
-
-    except Exception as e:
-        print(f"Coudn't retrieve_image {e}")
+    async for chunk in utils.retrieve_image(current_user.username, db_image.name):
+        img_data.write(chunk)
 
     transformed = await utils.image_transformer(
         img_data, transformations, db_image.name
     )
-
-    if not transformed:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="image transformation failed",
-        )
 
     db_transformed_image = await utils.upload_image(
         current_user.username,

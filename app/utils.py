@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from fastapi import HTTPException, status
 from pwdlib import PasswordHash
 import aioboto3
 from botocore.exceptions import ClientError
@@ -76,7 +77,9 @@ async def retrieve_image(username: str, image_name: str, stream=False):
         try:
             response = await s3.get_object(Bucket=bucket, Key=key)
         except ClientError as e:
-            raise
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Couldn't retrieve_image"
+            )
 
         async with response["Body"] as body:
             if stream:
@@ -134,20 +137,18 @@ async def image_transformer(img, transformations, image_name):
                 new_image = new_image.convert("RGB")
 
         img_byte_arr = io.BytesIO()
-        success = False
 
         try:
             new_image.save(img_byte_arr, format=new_image_type)
             img_byte_arr.seek(0)
-            success = True
-
-        except Exception as e:
-            print(f"Transformation failed: {e}")
-            raise
-
-        if success:
             return {
                 "name": new_image_name,
                 "type": f"image/{new_image_type.lower()}",  # pyright: ignore[]
                 "data": img_byte_arr,
             }
+
+        except Exception as e:
+            print(f"Transformation failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Transformation failed"
+            )
