@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class Resize(BaseModel):
@@ -72,3 +72,9 @@ class ImageCreate(BaseModel):
 
 class ImageResponse(ImageCreate):
     pass
+
+
+class Pagination(BaseModel):
+    per_page: int = Field(ge=1, default=1, le=5000000)
+    page: int = Field(ge=1, le=100, default=10)
+    order: Literal["ASC", "DESC"] = "ASC"

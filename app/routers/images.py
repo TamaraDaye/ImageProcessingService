@@ -1,8 +1,18 @@
 from botocore.exceptions import ClientError
 from fastapi.responses import StreamingResponse
 from typing import Annotated
-from fastapi import APIRouter, Body
-from fastapi import Depends, status, HTTPException, Query, File, UploadFile, Path
+from fastapi import (
+    APIRouter,
+    Depends,
+    status,
+    HTTPException,
+    Query,
+    File,
+    UploadFile,
+    Path,
+)
+from sqlalchemy import text
+from sqlalchemy.future import select
 from .. import schemas
 from . import authorization
 from ..models import models
@@ -55,6 +65,26 @@ async def get_image(
 
     except ClientError as _:
         raise HTTPException(status_code=404, detail="Image not found")
+
+
+@router.get("/images/", response_model=list[schemas.ImageResponse])
+async def get_images(
+    session: SessionDep, pagination: Annotated[schemas.Pagination, Query()]
+):
+    query = (
+        select(models.Image)
+        .limit(pagination.per_page)
+        .offset(
+            pagination.page - 1
+            if pagination.page == 1
+            else (pagination.page - 1) * pagination.per_page
+        )
+        .order_by(text(f"uploaded_at {pagination.order}"))
+    )
+
+    images = await session.scalars(query)
+
+    return images
 
 
 @router.post("/images/{id}/transform", response_model=schemas.ImageResponse)
